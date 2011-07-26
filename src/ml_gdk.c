@@ -192,7 +192,7 @@ CAMLprim value ml_gdk_color_white (value cmap)
     gdk_color_white (GdkColormap_val(cmap), &color);
     return Val_copy(color);
 }
-    
+
 CAMLprim value ml_gdk_color_black (value cmap)
 {
     GdkColor color;
@@ -254,7 +254,7 @@ CAMLprim value ml_gdk_drawable_get_size (value drawable)
   value ret;
 
   gdk_drawable_get_size (GdkDrawable_val(drawable), &x, &y);
-  
+
   ret = alloc_small (2,0);
   Field(ret,0) = Val_int(x);
   Field(ret,1) = Val_int(y);
@@ -276,7 +276,7 @@ CAMLprim value ml_GDK_WINDOW_XWINDOW(value v)
 {
  ml_raise_gdk ("Not available for Win32");
  return Val_unit;
-} 
+}
 
 #else
 ML_1 (GDK_WINDOW_XWINDOW, GdkDrawable_val, Val_XID)
@@ -287,7 +287,7 @@ CAMLprim value ml_gdk_window_get_position (value window)
   value ret;
 
   gdk_window_get_position (GdkWindow_val(window), &x, &y);
-  
+
   ret = alloc_small (2,0);
   Field(ret,0) = Val_int(x);
   Field(ret,1) = Val_int(y);
@@ -447,14 +447,14 @@ CAMLprim value ml_gdk_property_change (value window, value property, value type,
     int i;
     switch (format) {
     case 16:
-        sdata = calloc(nelems, sizeof(short)); 
+        sdata = calloc(nelems, sizeof(short));
         for (i=0; i<nelems; i++)
             ((gushort*)sdata)[i] = Int_val(Field(data,i));
         break;
     case 32:
         sdata = calloc(nelems, sizeof(long));
         for (i=0; i<nelems; i++)
-            ((gulong*)sdata)[i] = Int32_val(Field(data,i)); 
+            ((gulong*)sdata)[i] = Int32_val(Field(data,i));
         break;
     default:
         sdata = (guchar*)data;
@@ -618,7 +618,7 @@ CAMLprim value ml_gdk_gc_set_dashes(value gc, value offset, value dashes)
   /* stat_free (cdashes); ? */
   CAMLreturn(Val_unit);
 }
-  
+
 
 ML_2 (gdk_gc_copy, GdkGC_val, GdkGC_val, Unit)
 CAMLprim value ml_gdk_gc_get_values (value gc)
@@ -741,11 +741,11 @@ ML_9 (gdk_draw_pixmap, GdkDrawable_val, GdkGC_val, GdkPixmap_val, Int_val, Int_v
 ML_bc9 (ml_gdk_draw_pixmap)
 ML_9 (gdk_draw_image, GdkDrawable_val, GdkGC_val, GdkImage_val, Int_val, Int_val, Int_val, Int_val, Int_val, Int_val, Unit)
 ML_bc9 (ml_gdk_draw_image)
-ML_3 (gdk_draw_points, GdkDrawable_val, GdkGC_val, 
+ML_3 (gdk_draw_points, GdkDrawable_val, GdkGC_val,
       Insert(PointArray_val(arg3)) PointArrayLen_val, Unit)
-ML_3 (gdk_draw_segments, GdkDrawable_val, GdkGC_val, 
+ML_3 (gdk_draw_segments, GdkDrawable_val, GdkGC_val,
       Insert(SegmentArray_val(arg3)) SegmentArrayLen_val, Unit)
-ML_3 (gdk_draw_lines, GdkDrawable_val, GdkGC_val, 
+ML_3 (gdk_draw_lines, GdkDrawable_val, GdkGC_val,
       Insert(PointArray_val(arg3)) PointArrayLen_val, Unit)
 
 /* RGB */
