@@ -32,7 +32,10 @@ module Main = struct
   external init : string array -> string array = "ml_gtk_init"
   (* external set_locale : unit -> string = "ml_gtk_set_locale" *)
   external disable_setlocale : unit -> unit = "ml_gtk_disable_setlocale"
-  (* external main : unit -> unit = "ml_gtk_main" *)
+
+  external ml_gtk_main : unit -> unit = "ml_gtk_main"
+  external ml_gtk_main_quit : unit -> unit = "ml_gtk_main_quit"
+
   let init ?(setlocale=true) () =
     let setlocale =
       try Sys.getenv "GTK_SETLOCALE" <> "0" with Not_found -> setlocale in
@@ -74,12 +77,19 @@ debug_loops "GtkMain:58";
 assert false(*
     if !loops <> [] then loops := List.tl !loops
     *); ()
-  let main_func = ref default_main
+
+  let simple_main () = ml_gtk_main ()
+
+  let main_func = ref simple_main (*default_main*)
+
   let main () = !main_func ()
+(*
   let quit () = if !loops_p <> [] then
 (debug_loops "GtkMain:63";
      Main.quit (List.hd !loops_p)
 ) else debug_loops "GtkMain:65 no loops"
+*)
+  let quit = ml_gtk_main_quit
 
   external get_version : unit -> int * int * int = "ml_gtk_get_version"
   let version = get_version ()

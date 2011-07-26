@@ -56,10 +56,12 @@ gboolean dispatch(GSource *source, GSourceFunc callback, gpointer user_data)
 
   if ((cread < 0) || !GtkThread_do_jobs) {error(""); return TRUE;}
 
-  // The runtime is is not released when entering main glib loop,
-  // so these are commented out.
   //caml_leave_blocking_section();
+
+  gdk_threads_enter();
   (void)caml_callback_exn(*GtkThread_do_jobs, Val_unit);
+  gdk_threads_leave();
+
   //caml_enter_blocking_section();
   return TRUE;
 }

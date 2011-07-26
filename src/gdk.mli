@@ -75,7 +75,7 @@ module Tags : sig
   type scroll_direction = [ `UP | `DOWN | `LEFT | `RIGHT ]
   type notify_type =
     [ `ANCESTOR | `VIRTUAL | `INFERIOR | `NONLINEAR
-    | `NONLINEAR_VIRTUAL | `UNKNOWN ] 
+    | `NONLINEAR_VIRTUAL | `UNKNOWN ]
   type crossing_mode = [ `NORMAL | `GRAB | `UNGRAB ]
   type setting_action = [ `NEW | `CHANGED | `DELETED ]
   type window_state = [ `WITHDRAWN | `ICONIFIED | `MAXIMIZED | `STICKY ]
@@ -228,7 +228,7 @@ module Window :
     val set_back_pixmap : window -> background_pixmap -> unit
     val set_cursor : window -> cursor -> unit
 
-    (* for backward compatibility for lablgtk1 programs *)	  
+    (* for backward compatibility for lablgtk1 programs *)
     val get_visual : window -> visual
   end
 
@@ -245,17 +245,17 @@ module Region :
     type gdkOverlapType = [ `IN|`OUT|`PART ]
     val create : unit -> region
     val destroy : region -> unit
-    val polygon : (int * int) list -> gdkFillRule -> region 
+    val polygon : (int * int) list -> gdkFillRule -> region
     val intersect : region -> region -> region
-    val union : region -> region -> region 
-    val subtract : region -> region -> region 
-    val xor : region -> region -> region 
+    val union : region -> region -> region
+    val subtract : region -> region -> region
+    val xor : region -> region -> region
     val union_with_rect : region -> Rectangle.t -> region
     val offset : region -> x:int -> y:int -> unit
     val shrink : region -> x:int -> y:int -> unit
     val empty : region -> bool
     val equal : region -> region -> bool
-    val point_in : region -> x:int -> y:int -> bool 
+    val point_in : region -> x:int -> y:int -> bool
     val rect_in : region -> Rectangle.t -> gdkOverlapType
     val get_clipbox : region -> Rectangle.t -> unit
   end
@@ -406,9 +406,9 @@ module DnD :
 module Truecolor :
   sig
     val color_creator : visual -> (red: int -> green: int -> blue: int -> int)
-	(* [color_creator visual] creates a function to calculate 
-	   the pixel color id for given red, green and blue component 
-	   value ([0..65535]) at the client side. [visual] must have 
+	(* [color_creator visual] creates a function to calculate
+	   the pixel color id for given red, green and blue component
+	   value ([0..65535]) at the client side. [visual] must have
            `TRUE_COLOR or `DIRECT_COLOR type. This function improves
            the speed of the color query of true color visual greatly. *)
 	(* WARN: this approach is not theoretically correct for true color
@@ -524,3 +524,14 @@ end
 module Windowing : sig
   val platform : [`QUARTZ | `WIN32 | `X11]
 end
+
+module Threads : sig
+  val initialize : unit -> unit
+  (** This is called once by GtkThread.main.
+  In general, it should be called before any other GTK/GDK functions in order to get proper behavior wrt threads. Beware "Idles, timeouts, and input functions" - need special attention. *)
+
+  val synchronized : ('a -> 'b) -> 'a -> 'b
+  (** Calls the given function with the given argument within the main GDK lock, so all the GTK can be accessed freely. This also calls [gdk_flush] before return. *)
+
+end
+

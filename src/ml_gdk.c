@@ -37,6 +37,7 @@
 #include <caml/memory.h>
 #include <caml/callback.h>
 #include <caml/bigarray.h>
+#include <caml/signals.h>
 
 #include "wrappers.h"
 #include "ml_gpointer.h"
@@ -69,6 +70,61 @@ CAMLprim value ml_gdk_init(value unit)
   GType t =
     gdk_color_get_type();
   return Val_GType(t);
+}
+
+#define error(msg) fprintf(stderr, "%s:%i %s\n", __FILE__, __LINE__, msg);
+#define debug(msg) fprintf(stderr, "%s:%i %s\n", __FILE__, __LINE__, msg);
+#define debugi(msg, vv) fprintf(stderr, "%s:%i %s=%i\n", __FILE__, __LINE__, (msg), (vv))
+
+CAMLprim value ml_g_thread_init(value unit)
+{
+  g_thread_init(NULL);
+  return Val_unit;
+}
+ML_0(gdk_threads_init, Unit);
+ML_0(gdk_threads_enter, Unit);
+ML_0(gdk_threads_leave, Unit);
+
+GMutex *mutex_for_gdk = NULL;
+
+CAMLprim value acquire_mutex_for_gdk(value unit)
+{
+  debug("wait for GDK lock");
+  g_mutex_lock(mutex_for_gdk);
+  debug("GDK locked");
+  return Val_unit;
+}
+CAMLprim value release_mutex_for_gdk(value unit)
+{
+  g_mutex_unlock(mutex_for_gdk);
+  debug("GDK unlocked");
+  return Val_unit;
+}
+
+void enter_fn(void)
+{
+  debug("enter_fn");
+  /* Acquire both locks. */
+  caml_leave_blocking_section();
+  g_mutex_lock(mutex_for_gdk);
+  debug("enter_fn acquired locks");
+}
+
+void leave_fn(void)
+{
+  debug("leave_fn");
+  /* Release both locks: OCaml runtime and GDK protection */
+  g_mutex_unlock(mutex_for_gdk);
+  caml_enter_blocking_section();
+}
+
+CAMLprim value set_our_lock_functions(value unit)
+{
+  if(!mutex_for_gdk) mutex_for_gdk = g_mutex_new ();
+  if(!mutex_for_gdk) caml_failwith("set_our_lock_functions "__FILE__);
+  gdk_threads_set_lock_functions(enter_fn, leave_fn);
+  debug("our setup done");
+  return Val_unit;
 }
 
 #include "gdk_tags.c"
@@ -192,7 +248,7 @@ CAMLprim value ml_gdk_color_white (value cmap)
     gdk_color_white (GdkColormap_val(cmap), &color);
     return Val_copy(color);
 }
-    
+
 CAMLprim value ml_gdk_color_black (value cmap)
 {
     GdkColor color;
@@ -254,7 +310,7 @@ CAMLprim value ml_gdk_drawable_get_size (value drawable)
   value ret;
 
   gdk_drawable_get_size (GdkDrawable_val(drawable), &x, &y);
-  
+
   ret = alloc_small (2,0);
   Field(ret,0) = Val_int(x);
   Field(ret,1) = Val_int(y);
@@ -276,7 +332,7 @@ CAMLprim value ml_GDK_WINDOW_XWINDOW(value v)
 {
  ml_raise_gdk ("Not available for Win32");
  return Val_unit;
-} 
+}
 
 #else
 ML_1 (GDK_WINDOW_XWINDOW, GdkDrawable_val, Val_XID)
@@ -287,7 +343,7 @@ CAMLprim value ml_gdk_window_get_position (value window)
   value ret;
 
   gdk_window_get_position (GdkWindow_val(window), &x, &y);
-  
+
   ret = alloc_small (2,0);
   Field(ret,0) = Val_int(x);
   Field(ret,1) = Val_int(y);
@@ -447,14 +503,14 @@ CAMLprim value ml_gdk_property_change (value window, value property, value type,
     int i;
     switch (format) {
     case 16:
-        sdata = calloc(nelems, sizeof(short)); 
+        sdata = calloc(nelems, sizeof(short));
         for (i=0; i<nelems; i++)
             ((gushort*)sdata)[i] = Int_val(Field(data,i));
         break;
     case 32:
         sdata = calloc(nelems, sizeof(long));
         for (i=0; i<nelems; i++)
-            ((gulong*)sdata)[i] = Int32_val(Field(data,i)); 
+            ((gulong*)sdata)[i] = Int32_val(Field(data,i));
         break;
     default:
         sdata = (guchar*)data;
@@ -618,7 +674,7 @@ CAMLprim value ml_gdk_gc_set_dashes(value gc, value offset, value dashes)
   /* stat_free (cdashes); ? */
   CAMLreturn(Val_unit);
 }
-  
+
 
 ML_2 (gdk_gc_copy, GdkGC_val, GdkGC_val, Unit)
 CAMLprim value ml_gdk_gc_get_values (value gc)
@@ -741,11 +797,11 @@ ML_9 (gdk_draw_pixmap, GdkDrawable_val, GdkGC_val, GdkPixmap_val, Int_val, Int_v
 ML_bc9 (ml_gdk_draw_pixmap)
 ML_9 (gdk_draw_image, GdkDrawable_val, GdkGC_val, GdkImage_val, Int_val, Int_val, Int_val, Int_val, Int_val, Int_val, Unit)
 ML_bc9 (ml_gdk_draw_image)
-ML_3 (gdk_draw_points, GdkDrawable_val, GdkGC_val, 
+ML_3 (gdk_draw_points, GdkDrawable_val, GdkGC_val,
       Insert(PointArray_val(arg3)) PointArrayLen_val, Unit)
-ML_3 (gdk_draw_segments, GdkDrawable_val, GdkGC_val, 
+ML_3 (gdk_draw_segments, GdkDrawable_val, GdkGC_val,
       Insert(SegmentArray_val(arg3)) SegmentArrayLen_val, Unit)
-ML_3 (gdk_draw_lines, GdkDrawable_val, GdkGC_val, 
+ML_3 (gdk_draw_lines, GdkDrawable_val, GdkGC_val,
       Insert(PointArray_val(arg3)) PointArrayLen_val, Unit)
 
 /* RGB */

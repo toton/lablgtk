@@ -106,6 +106,7 @@ debug "GtkThread:90";
   match !loop_id with
     | None ->
       loop_id := Some this_thread;
+      Gdk.Threads.initialize ();
       debug "Just before GtkMain.Main.main";
       GtkMain.Main.main ()
     | Some id when id = this_thread -> GtkMain.Main.main ()
