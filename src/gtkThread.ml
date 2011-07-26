@@ -43,6 +43,7 @@ let gui_safe () =
 let has_jobs () = not (with_jobs Queue.is_empty)
 let n_jobs () = with_jobs Queue.length
 let do_next_job () = with_jobs Queue.take ()
+(*
 let async j x = with_jobs
     (Queue.add (fun () ->
       GtkSignal.safe_call j x ~where:"asynchronous call"))
@@ -61,6 +62,10 @@ let sync f x =
   async j x;
   while !res = NA do Condition.wait c m done;
   match !res with Val y -> y | Exn e -> raise e | NA -> assert false
+*)
+
+let sync = Gdk.Threads.synchronize
+let async = Gdk.Threads.synchronize
 
 let do_jobs_delay = ref 0.013;;
 let set_do_jobs_delay d = do_jobs_delay := max 0. d;;
@@ -96,8 +101,14 @@ let thread_main ?set_delay_cb () =
   sync (thread_main_real ?set_delay_cb) ()
 
 let main ?set_delay_cb () =
-  GtkMain.Main.main_func := thread_main;
-  thread_main ?set_delay_cb ()
+  let this_thread = Thread.id (Thread.self ()) in
+  match !loop_id with
+    | None ->
+      loop_id := Some this_thread;
+      Gdk.Threads.initialize ();
+      GtkMain.Main.main ()
+    | Some id when id = this_thread -> GtkMain.Main.main ()
+    | Some _ -> sync GtkMain.Main.main ()
 
 let start () =
   reset ();

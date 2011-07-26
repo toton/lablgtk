@@ -33,6 +33,10 @@ module Main = struct
   (* external set_locale : unit -> string = "ml_gtk_set_locale" *)
   external disable_setlocale : unit -> unit = "ml_gtk_disable_setlocale"
   (* external main : unit -> unit = "ml_gtk_main" *)
+
+  external ml_gtk_main : unit -> unit = "ml_gtk_main"
+  external ml_gtk_main_quit : unit -> unit = "ml_gtk_main_quit"
+
   let init ?(setlocale=true) () =
     let setlocale =
       try Sys.getenv "GTK_SETLOCALE" <> "0" with Not_found -> setlocale in
@@ -55,9 +59,10 @@ module Main = struct
     loops := loop :: !loops;
     while Main.is_running loop do Main.iteration true done;
     if !loops <> [] then loops := List.tl !loops
-  let main_func = ref default_main
+  let main_func = ref ml_gtk_main (* instead of default_main *)
   let main () = !main_func ()
-  let quit () = if !loops <> [] then Main.quit (List.hd !loops)
+  (*let quit () = if !loops <> [] then Main.quit (List.hd !loops)*)
+  let quit = ml_gtk_main_quit
   external get_version : unit -> int * int * int = "ml_gtk_get_version"
   let version = get_version ()
   external get_current_event_time : unit -> int32

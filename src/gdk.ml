@@ -790,8 +790,49 @@ module Windowing = struct
 end
 
 module Threads = struct
+  (* There are two mutexes: ocaml runtime protection and GDK protection.
+     The one that protects GDK will be used to synchronize accesses to GUI.
+     The other one is handled by the runtime system, and it is locked when OCaml code executes.
+     We will ask GDK to release both mutexes when the main loop idles.
+     This way other OCaml threads will run.
+     The only problem is that:
+       "Idles, timeouts, and input functions are executed outside of the main GTK+ lock"
+     In our particular setup the above words "the main GTK+ lock" refer to BOTH our mutexes.
+     It means that callbacks for these events need to be wrapped with
+     ml_gdk_threads_enter/leave.
+     Alternatively only the OCaml runtime mutex can be locked by these handlers,
+     but this would require special attention.
+  *)
+
+  external set_our_lock_functions : unit -> unit = "set_our_lock_functions"
+  (* Tells GDK that when GTK+ will be idling, both mutexes should be released. *)
+
   external init : unit -> unit = "ml_gdk_threads_init"
+
+  (* set_our_lock_functions asks GDK to have these two functions work on both mutexes. *)
   external enter : unit -> unit = "ml_gdk_threads_enter"
   external leave : unit -> unit = "ml_gdk_threads_leave"
+
+  (* These two functions work on the mutex inteded for GDK protection only. *)
+  external acquire_mutex_for_gdk : unit -> unit = "acquire_mutex_for_gdk"
+  external release_mutex_for_gdk : unit -> unit = "release_mutex_for_gdk"
+
   external g_thread_init : unit -> unit = "ml_g_thread_init" (* defined in ml_gdk.c *)
+
+  let initialize () =
+    g_thread_init ();
+    set_our_lock_functions ();
+    init ();
+    (* depending on how our main loop is done, we could have to grab the GDK lock now,
+       when simply using gtk_main we need so: *)
+    acquire_mutex_for_gdk () (* hopefully need not to release it just before process exits *)
+
+  let synchronize f x =
+    acquire_mutex_for_gdk ();
+    let result = f x in
+    X.flush ();
+    release_mutex_for_gdk ();
+    result
+
 end
+

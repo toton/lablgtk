@@ -524,3 +524,13 @@ end
 module Windowing : sig
   val platform : [`QUARTZ | `WIN32 | `X11]
 end
+
+module Threads : sig
+  val initialize : unit -> unit
+  (** This is called once by GtkThread.main.
+  In general, it should be called before any other GTK/GDK functions in order to get proper behavior wrt threads. Beware "Idles, timeouts, and input functions" - need special attention. *)
+
+  val synchronize : ('a -> 'b) -> 'a -> 'b
+  (** Calls the given function with the given argument within the main GDK lock, so all the GTK can be accessed freely. This also calls [gdk_flush] before return. *)
+
+end

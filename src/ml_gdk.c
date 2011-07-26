@@ -37,6 +37,7 @@
 #include <caml/memory.h>
 #include <caml/callback.h>
 #include <caml/bigarray.h>
+#include <caml/signals.h>
 
 #include "wrappers.h"
 #include "ml_gpointer.h"
@@ -79,6 +80,42 @@ CAMLprim value ml_g_thread_init(value unit)
 ML_0(gdk_threads_init, Unit);
 ML_0(gdk_threads_enter, Unit);
 ML_0(gdk_threads_leave, Unit);
+
+GMutex *mutex_for_gdk = NULL;
+
+CAMLprim value acquire_mutex_for_gdk(value unit)
+{
+  g_mutex_lock(mutex_for_gdk);
+  return Val_unit;
+}
+
+CAMLprim value release_mutex_for_gdk(value unit)
+{
+  g_mutex_unlock(mutex_for_gdk);
+  return Val_unit;
+}
+
+void enter_fn(void)
+{
+  /* Acquire both locks. */
+  caml_leave_blocking_section();
+  g_mutex_lock(mutex_for_gdk);
+}
+
+void leave_fn(void)
+{
+  /* Release both locks: OCaml runtime and GDK protection */
+  g_mutex_unlock(mutex_for_gdk);
+  caml_enter_blocking_section();
+}
+
+CAMLprim value set_our_lock_functions(value unit)
+{
+  if(!mutex_for_gdk) mutex_for_gdk = g_mutex_new ();
+  if(!mutex_for_gdk) caml_failwith("set_our_lock_functions "__FILE__);
+  gdk_threads_set_lock_functions(enter_fn, leave_fn);
+  return Val_unit;
+}
 
 #include "gdk_tags.c"
 
