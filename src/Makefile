@@ -140,11 +140,11 @@ ml_gtksourceview.o: CFLAGS=$(GTKSOURCEVIEWCFLAGS)
 GTKSOURCEVIEWMLOBJS = gtkSourceView.cmo gSourceView.cmo
 GTKSOURCEVIEWCOBJS = ml_gtksourceview$(XO)
 ml_gtksourceview.c: pango_tags.h
-GTKSOURCEVIEWMLOBJSENUM = sourceViewEnums.cmo 
+GTKSOURCEVIEWMLOBJSENUM = sourceViewEnums.cmo
 GTKSOURCEVIEWPROPS = gtkSourceView.props
 CLIBS += liblablgtksourceview$(XA)
 EXTRA_MLLIBS += lablgtksourceview.cma
-EXTRA_OBJS += $(GTKSOURCEVIEWMLOBJS) $(GTKSOURCEVIEWMLOBJSENUM) 
+EXTRA_OBJS += $(GTKSOURCEVIEWMLOBJS) $(GTKSOURCEVIEWMLOBJSENUM)
 BEFORE_DEPEND += $(GTKSOURCEVIEWMLOBJS:%.cmo=%.ml) $(GTKSOURCEVIEWPROPS:%.props=%Props.ml) $(GTKSOURCEVIEWPROPS:%.props= o%Props.ml) $(GTKSOURCEVIEWMLOBJSENUM:%.cmo=%.ml)
 lablgtksourceview.cma liblablgtksourceview$(XA): \
 	$(GTKSOURCEVIEWCOBJS) $(GTKSOURCEVIEWMLOBJSENUM) $(GTKSOURCEVIEWPROPS:%.props=%Props.cmo) $(GTKSOURCEVIEWPROPS:%.props=o%Props.cmo) $(GTKSOURCEVIEWMLOBJS)
@@ -158,7 +158,7 @@ MLLIBS += lablgtksourceview2.cma
 CLIBS += liblablgtksourceview2$(XA)
 GTKSOURCEVIEW2MLOBJS = gtkSourceView2.cmo gSourceView2.cmo
 GTKSOURCEVIEW2COBJS = ml_gtksourceview2$(XO)
-GTKSOURCEVIEW2MLOBJSENUM = sourceView2Enums.cmo 
+GTKSOURCEVIEW2MLOBJSENUM = sourceView2Enums.cmo
 GTKSOURCEVIEW2PROPS = gtkSourceView2.props
 BEFORE_DEPEND += $(GTKSOURCEVIEW2PROPS:%.props=%Props.ml) $(GTKSOURCEVIEW2PROPS:%.props= o%Props.ml) $(GTKSOURCEVIEWMLOBJSENUM:%.cmo=%.ml)
 
@@ -212,7 +212,8 @@ GTKOBJS =  ml_gtk$(XO) ml_pango$(XO) ml_gtkaction$(XO) \
 	ml_gtkpack$(XO) ml_gtkrange$(XO) ml_gtkstock$(XO) \
 	ml_gtktext$(XO) ml_gtktree$(XO)
 COBJS = ml_gdkpixbuf$(XO) ml_gdk$(XO) ml_glib$(XO) ml_gobject$(XO) \
-	ml_gpointer$(XO) ml_gvaluecaml$(XO) wrappers$(XO) $(GTKOBJS)
+	ml_gpointer$(XO) ml_gvaluecaml$(XO) wrappers$(XO) \
+	glib_loop_enrichment$(XO)	$(GTKOBJS)
 GTKPROPS += gtkBase.props gtkBin.props gtkButton.props gtkEdit.props \
 	gtkList.props gtkMenu.props gtkMisc.props gtkPack.props \
 	gtkRange.props gtkText.props gtkTree.props gtkFile.props \

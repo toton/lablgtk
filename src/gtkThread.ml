@@ -40,12 +40,21 @@ let cannot_sync () =
 let gui_safe () =
   not (Sys.os_type = "Win32") || !loop_id = Some(Thread.id (Thread.self ()))
 
+external signal_queue_grown : unit -> unit = "signal_queue_grown"
+external enrich_glib_loop : unit -> unit = "enrich_glib_loop"
+let register_cb_enrich_glib_loop do_jobs =
+  Callback.register "GtkThread.safe_do_jobs" do_jobs;
+  enrich_glib_loop ()
+
 let has_jobs () = not (with_jobs Queue.is_empty)
 let n_jobs () = with_jobs Queue.length
 let do_next_job () = with_jobs Queue.take ()
-let async j x = with_jobs
+let async j x =
+  with_jobs
     (Queue.add (fun () ->
-      GtkSignal.safe_call j x ~where:"asynchronous call"))
+      GtkSignal.safe_call j x ~where:"asynchronous call"));
+  signal_queue_grown ()
+
 type 'a result = Val of 'a | Exn of exn | NA
 let sync f x =
   if cannot_sync () then f x else
@@ -62,42 +71,22 @@ let sync f x =
   while !res = NA do Condition.wait c m done;
   match !res with Val y -> y | Exn e -> raise e | NA -> assert false
 
-let do_jobs_delay = ref 0.013;;
-let set_do_jobs_delay d = do_jobs_delay := max 0. d;;
 let do_jobs () =
-  Thread.delay !do_jobs_delay;
   for i = 1 to n_jobs () do do_next_job () done;
   true
 
+let safe_do_jobs () = (* mostly superfluous safety *)
+  GtkSignal.safe_call ~where:"async job callback" (fun () -> ignore (do_jobs ())) ()
 
-(* We check first whether there are some event pending, and run
-   some iterations. We then need to delay, thus focing a thread switch. *)
-
-let thread_main_real ?(set_delay_cb=(fun()->())) () =
-  try
-    let loop = (Glib.Main.create true) in
-    Main.loops := loop :: !Main.loops;
-    loop_id := Some (Thread.id (Thread.self ()));
-    while Glib.Main.is_running loop do
-      let i = ref 0 in
-      while !i < 100 && Glib.Main.pending () do
-        Glib.Main.iteration true;
-        incr i
-      done;
-      set_delay_cb();
-      do_jobs ()
-    done;
-    Main.loops := List.tl !Main.loops;
-  with exn ->
-    Main.loops := List.tl !Main.loops;
-    raise exn
-
-let thread_main ?set_delay_cb () =
-  sync (thread_main_real ?set_delay_cb) ()
+let once =
+  let notyet = ref true in
+  (fun f x ->
+    if !notyet then (f x; notyet := false) else ()
+  )
 
 let main ?set_delay_cb () =
-  GtkMain.Main.main_func := thread_main;
-  thread_main ?set_delay_cb ()
+  once register_cb_enrich_glib_loop safe_do_jobs;
+  sync GtkMain.Main.main ()
 
 let start () =
   reset ();
@@ -112,3 +101,5 @@ let _ =
   GtkSignal.exit_callback :=
     (fun () -> decr depth; if !depth = 0 then Mutex.unlock mutex)
 *)
+
+let set_do_jobs_delay _ = ()
