@@ -5,6 +5,7 @@
 */
 #include <stdio.h>
 #include <unistd.h>
+#include <poll.h>
 
 #include <caml/mlvalues.h>
 #include <caml/signals.h>
@@ -15,6 +16,10 @@
 #include <caml/fail.h>
 #include <glib.h>
 
+#define error(msg) fprintf(stderr, "%s:%i %s\n", __FILE__, __LINE__, msg);
+#define debug(msg) fprintf(stderr, "%s:%i %s\n", __FILE__, __LINE__, msg);
+#define debugi(msg, vv) fprintf(stderr, "%s:%i %s=%i\n", __FILE__, __LINE__, (msg), (vv))
+
 int semaphore_pipe_wr_fd = 0;
 char onebyte;
 GPollFD event_poll_rd_fd;
@@ -22,25 +27,40 @@ value *GtkThread_do_jobs = 0;
 
 gboolean prepare(GSource *source, gint *timeout)
 {
-  *timeout = -1;
-  return FALSE;
+  struct pollfd pfd;
+  pfd.fd = event_poll_rd_fd.fd;
+  pfd.events = POLLIN;
+  int poll_result = poll(&pfd, 1, 0);
+  switch(poll_result)
+  {
+    case 0:
+      *timeout = -1;
+      return FALSE;
+    case 1:
+      return TRUE;
+    default:
+      error("poll");
+  }
 }
 
 gboolean check(GSource *source)
 {
+//  debugi("GLE-check", (event_poll_rd_fd.revents & G_IO_IN));
   return event_poll_rd_fd.revents & G_IO_IN;
 }
 
 gboolean dispatch(GSource *source, GSourceFunc callback, gpointer user_data)
 {
+  debug("GLE-dispatch");
   ssize_t cread = read(event_poll_rd_fd.fd, &onebyte, 1);
 
-  if ((cread < 0) || !GtkThread_do_jobs)
-    {fprintf(stderr,"Error: "__FILE__":%i\n", __LINE__); return TRUE;}
+  if ((cread < 0) || !GtkThread_do_jobs) {error(""); return TRUE;}
 
-  caml_leave_blocking_section();
+  // The runtime is is not released when entering main glib loop,
+  // so these are commented out.
+  //caml_leave_blocking_section();
   (void)caml_callback_exn(*GtkThread_do_jobs, Val_unit);
-  caml_enter_blocking_section();
+  //caml_enter_blocking_section();
   return TRUE;
 }
 
@@ -68,8 +88,10 @@ CAMLprim value enrich_glib_loop(value nothing)
 
 CAMLprim value signal_queue_grown(value nothing)
 {
+  debug("Grown");
   if (!semaphore_pipe_wr_fd) caml_failwith(__FILE__":71");
   ssize_t result = write(semaphore_pipe_wr_fd, &onebyte, 1);
   if (result == -1) caml_failwith(__FILE__":72");
+  debug("signal_queue_grown written");
   return Val_unit;
 }

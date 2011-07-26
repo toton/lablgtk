@@ -49,15 +49,38 @@ module Main = struct
     Obj.truncate (Obj.repr Sys.argv) (Array.length argv);
     if setlocale then Glib.Main.setlocale `ALL None else ""
   open Glib
-  let loops = ref []
+
+  let loops_p = ref []
+
+  let xxx = ref [2;3]
+  let yyy = ref 2
+
+let debug_loops msg =
+  print_endline
+    (msg^" length loops= "^(string_of_int (List.length !loops_p))
+    ^" length xxx= "^(string_of_int (List.length !xxx))
+    ^" yyy= "^(string_of_int ( !yyy))
+    )
+
   let default_main () =
     let loop = (Main.create true) in
-    loops := loop :: !loops;
-    while Main.is_running loop do Main.iteration true done;
+    loops_p := loop :: !loops_p;
+    xxx := [1];yyy:= 10;
+debug_loops "GtkMain:56";
+    while Main.is_running loop do
+(*    debug_loops "GtkMain:61";*)
+    Main.iteration true done;
+debug_loops "GtkMain:58";
+assert false(*
     if !loops <> [] then loops := List.tl !loops
+    *); ()
   let main_func = ref default_main
   let main () = !main_func ()
-  let quit () = if !loops <> [] then Main.quit (List.hd !loops)
+  let quit () = if !loops_p <> [] then
+(debug_loops "GtkMain:63";
+     Main.quit (List.hd !loops_p)
+) else debug_loops "GtkMain:65 no loops"
+
   external get_version : unit -> int * int * int = "ml_gtk_get_version"
   let version = get_version ()
   external get_current_event_time : unit -> int32

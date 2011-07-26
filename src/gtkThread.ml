@@ -37,6 +37,10 @@ let cannot_sync () =
   match !loop_id with None -> true
   | Some id -> Thread.id (Thread.self ()) = id
 
+let debug msg =
+  print_endline
+    (msg^" loop_id= "^(match !loop_id with None -> "None" | Some _ -> "Some _"))
+
 let gui_safe () =
   not (Sys.os_type = "Win32") || !loop_id = Some(Thread.id (Thread.self ()))
 
@@ -50,14 +54,23 @@ let has_jobs () = not (with_jobs Queue.is_empty)
 let n_jobs () = with_jobs Queue.length
 let do_next_job () = with_jobs Queue.take ()
 let async j x =
+  print_endline "gtkThread.async";
   with_jobs
     (Queue.add (fun () ->
+      print_endline "gtkThread.async in job";
       GtkSignal.safe_call j x ~where:"asynchronous call"));
-  signal_queue_grown ()
+  (print_endline "signal_queue_grown"
+  ;signal_queue_grown ()
+  )
 
 type 'a result = Val of 'a | Exn of exn | NA
 let sync f x =
-  if cannot_sync () then f x else
+  debug "gtkThread.sync";
+  if cannot_sync () then
+   (debug "gtkThread.sync CANNOT SYNC";
+   f x
+   )
+  else
   let m = Mutex.create () in
   let res = ref NA in
   Mutex.lock m;
@@ -67,6 +80,7 @@ let sync f x =
     Mutex.lock m; res := y; Mutex.unlock m;
     Condition.signal c
   in
+  debug "gtkThread.sync calls async";
   async j x;
   while !res = NA do Condition.wait c m done;
   match !res with Val y -> y | Exn e -> raise e | NA -> assert false
@@ -85,8 +99,17 @@ let once =
   )
 
 let main ?set_delay_cb () =
+debug "GtkThread:88";
   once register_cb_enrich_glib_loop safe_do_jobs;
-  sync GtkMain.Main.main ()
+debug "GtkThread:90";
+  let this_thread = Thread.id (Thread.self ()) in
+  match !loop_id with
+    | None ->
+      loop_id := Some this_thread;
+      debug "Just before GtkMain.Main.main";
+      GtkMain.Main.main ()
+    | Some id when id = this_thread -> GtkMain.Main.main ()
+    | Some _ -> sync GtkMain.Main.main ()
 
 let start () =
   reset ();
