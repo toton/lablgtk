@@ -39,7 +39,7 @@ module Main = struct
   external destroy : t -> unit = "ml_g_main_destroy"
   type locale_category =
     [ `ALL | `COLLATE | `CTYPE | `MESSAGES | `MONETARY | `NUMERIC | `TIME ]
-  external setlocale : locale_category -> string option -> string 
+  external setlocale : locale_category -> string option -> string
     = "ml_setlocale"
 end
 
@@ -104,7 +104,7 @@ module Message = struct
     = "ml_g_log_remove_handler"
 
   external _set_always_fatal : int -> unit = "ml_g_log_set_always_fatal"
-  let set_always_fatal (levels : log_level list) = 
+  let set_always_fatal (levels : log_level list) =
     _set_always_fatal (int_of_log_levels levels)
 
   external _set_fatal_mask : ?domain:string -> int -> unit = "ml_g_log_set_fatal_mask"
@@ -116,7 +116,7 @@ module Message = struct
     Printf.kprintf (_log domain (log_level level)) fmt
 end
 
-(*    
+(*
 module Thread = struct
   external init : unit -> unit = "ml_g_thread_init"
       (* Call only once! *)
@@ -126,7 +126,7 @@ end
 *)
 
 module Convert = struct
-  type error = 
+  type error =
     | NO_CONVERSION
     | ILLEGAL_SEQUENCE
     | FAILED
@@ -148,23 +148,23 @@ module Convert = struct
 
   external utf8_validate : string -> bool = "ml_g_utf8_validate"
 
-  let raise_bad_utf8 () = 
+  let raise_bad_utf8 () =
     raise (Error (ILLEGAL_SEQUENCE, "Invalid byte sequence for UTF-8 string"))
 
   let locale_from_utf8 s =
     match get_charset () with
-    | (true, _) -> 
-	if utf8_validate s 
-	then s 
+    | (true, _) ->
+	if utf8_validate s
+	then s
 	else raise_bad_utf8 ()
     | (false, to_codeset) ->
 	convert s ~to_codeset ~from_codeset:"UTF-8"
 
   let locale_to_utf8 s =
     match get_charset () with
-    | (true, _) -> 
-	if utf8_validate s 
-	then s 
+    | (true, _) ->
+	if utf8_validate s
+	then s
 	else raise_bad_utf8 ()
     | (false, from_codeset) ->
 	convert s ~to_codeset:"UTF-8" ~from_codeset
@@ -173,7 +173,7 @@ module Convert = struct
     = "ml_g_filename_from_utf8"
   external filename_to_utf8 : string -> string
     = "ml_g_filename_to_utf8"
-	  
+
   external filename_from_uri : string -> string option * string
     = "ml_g_filename_from_uri"
   external filename_to_uri : ?hostname:string -> string -> string

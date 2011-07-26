@@ -91,7 +91,7 @@ module Tags = struct
 
   type notify_type =
     [ `ANCESTOR | `VIRTUAL | `INFERIOR | `NONLINEAR
-    | `NONLINEAR_VIRTUAL | `UNKNOWN ] 
+    | `NONLINEAR_VIRTUAL | `UNKNOWN ]
 
   type crossing_mode = [ `NORMAL | `GRAB | `UNGRAB ]
 
@@ -107,7 +107,7 @@ module Tags = struct
   type drag_action =
     [ `DEFAULT | `COPY | `MOVE | `LINK | `PRIVATE | `ASK ]
 
-  type rgb_dither = 
+  type rgb_dither =
     [ `NONE | `NORMAL | `MAX]
 
   type property_state = [ `NEW_VALUE | `DELETE ]
@@ -221,7 +221,7 @@ module Image = struct
   let cast w : image = Gobject.try_cast w "GdkImage"
   let destroy = Gobject.unsafe_unref
 
-  external create : kind: image_type -> visual: visual -> 
+  external create : kind: image_type -> visual: visual ->
     width: int -> height: int -> image
       = "ml_gdk_image_new"
   external get :
@@ -301,9 +301,9 @@ module Window = struct
   external get_pointer_location : window -> int * int =
     "ml_gdk_window_get_pointer_location"
   external root_parent : unit -> window = "ml_GDK_ROOT_PARENT"
-  external set_back_pixmap : window -> pixmap -> int -> unit = 
+  external set_back_pixmap : window -> pixmap -> int -> unit =
     "ml_gdk_window_set_back_pixmap"
-  external set_cursor : window -> cursor -> unit = 
+  external set_cursor : window -> cursor -> unit =
     "ml_gdk_window_set_cursor"
   external clear : window -> unit = "ml_gdk_window_clear"
   external clear_area :
@@ -311,15 +311,15 @@ module Window = struct
     = "ml_gdk_window_clear"
   external get_xwindow : [>`drawable] obj -> xid = "ml_GDK_WINDOW_XWINDOW"
 
-  let set_back_pixmap w pix = 
+  let set_back_pixmap w pix =
     let null_pixmap = (Obj.magic Gpointer.boxed_null : pixmap) in
     match pix with
       `NONE -> set_back_pixmap w null_pixmap 0
     | `PARENT_RELATIVE -> set_back_pixmap w null_pixmap 1
-    | `PIXMAP(pixmap) -> set_back_pixmap w pixmap 0 
-       (* anything OK, Maybe... *) 
+    | `PIXMAP(pixmap) -> set_back_pixmap w pixmap 0
+       (* anything OK, Maybe... *)
 
-  (* for backward compatibility for lablgtk1 programs *)	  
+  (* for backward compatibility for lablgtk1 programs *)
   let get_visual = Drawable.get_visual
 end
 
@@ -346,7 +346,7 @@ module Region = struct
   type gdkOverlapType = [ `IN|`OUT|`PART ]
   external create : unit -> region = "ml_gdk_region_new"
   external destroy : region -> unit = "ml_gdk_region_destroy"
-  external polygon : PointArray.t -> gdkFillRule -> region 
+  external polygon : PointArray.t -> gdkFillRule -> region
       = "ml_gdk_region_polygon"
   let polygon l =
     let len = List.length l in
@@ -358,11 +358,11 @@ module Region = struct
       = "ml_gdk_region_copy"
   external intersect : region -> region -> region
       = "ml_gdk_region_intersect"
-  external union : region -> region -> region 
+  external union : region -> region -> region
       = "ml_gdk_region_union"
-  external subtract : region -> region -> region 
+  external subtract : region -> region -> region
       = "ml_gdk_region_subtract"
-  external xor : region -> region -> region 
+  external xor : region -> region -> region
       = "ml_gdk_region_xor"
   external union_with_rect : region -> Rectangle.t -> region
       = "ml_gdk_region_union_with_rect"
@@ -375,14 +375,14 @@ module Region = struct
   external shrink : region -> x:int -> y:int -> unit = "ml_gdk_region_shrink"
   external empty : region -> bool = "ml_gdk_region_empty"
   external equal : region -> region -> bool = "ml_gdk_region_equal"
-  external point_in : region -> x:int -> y:int -> bool 
+  external point_in : region -> x:int -> y:int -> bool
       = "ml_gdk_region_point_in"
   external rect_in : region -> Rectangle.t -> gdkOverlapType
       = "ml_gdk_region_rect_in"
   external get_clipbox : region -> Rectangle.t -> unit
       = "ml_gdk_region_get_clipbox"
 end
-      
+
 
 module GC = struct
   type gdkFunction = [ `COPY|`INVERT|`XOR ]
@@ -520,7 +520,7 @@ module Draw = struct
       ~start:(truncate(start *. 64.))
       ~angle:(truncate(angle *. 64.))
 
-  let f_pointarray f l = 
+  let f_pointarray f l =
     let array_of_points l =
       let len = List.length l in
       let arr = PointArray.create ~len in
@@ -530,12 +530,12 @@ module Draw = struct
     in
     f (array_of_points l)
 
-  let f_segmentarray f l = 
+  let f_segmentarray f l =
     let array_of_segments l =
       let len = List.length l in
       let arr = SegmentArray.create ~len in
       List.fold_left l ~init:0
-      	~f:(fun pos ((x1,y1),(x2,y2)) -> 
+      	~f:(fun pos ((x1,y1),(x2,y2)) ->
 	  SegmentArray.set arr ~pos ~x1 ~y1 ~x2 ~y2; pos+1);
       arr
     in
@@ -549,26 +549,26 @@ module Draw = struct
     | l -> f_pointarray (polygon w gc ~filled) l
   external string :
     [>`drawable] obj -> font: font -> gc -> x: int -> y: int -> string -> unit
-    = "ml_gdk_draw_string_bc" "ml_gdk_draw_string"	
+    = "ml_gdk_draw_string_bc" "ml_gdk_draw_string"
   external layout :
     [>`drawable] obj -> gc -> x: int -> y: int -> Pango.layout ->
     ?fore:color -> ?back:color -> unit
     = "ml_gdk_draw_layout_with_colors_bc" "ml_gdk_draw_layout_with_colors"
-  external image_ : [>`drawable] obj -> gc -> image -> 
-    xsrc: int -> ysrc: int -> xdest: int -> ydest: int -> 
+  external image_ : [>`drawable] obj -> gc -> image ->
+    xsrc: int -> ysrc: int -> xdest: int -> ydest: int ->
     width: int -> height: int -> unit
     = "ml_gdk_draw_image_bc" "ml_gdk_draw_image"
   let image w gc ?(xsrc=0) ?(ysrc=0) ?(xdest=0) ?(ydest=0)
       ?(width= -1) ?(height= -1) image =
     image_ w gc image ~xsrc ~ysrc ~xdest ~ydest ~width ~height
 (*
-  external bitmap : [>`drawable] obj -> gc -> bitmap: bitmap -> 
-    xsrc: int -> ysrc: int -> xdest: int -> ydest: int -> 
+  external bitmap : [>`drawable] obj -> gc -> bitmap: bitmap ->
+    xsrc: int -> ysrc: int -> xdest: int -> ydest: int ->
     width: int -> height: int -> unit
       = "ml_gdk_draw_bitmap_bc" "ml_gdk_draw_bitmap"
 *)
-  external pixmap_ : [>`drawable] obj -> gc -> pixmap -> 
-    xsrc: int -> ysrc: int -> xdest: int -> ydest: int -> 
+  external pixmap_ : [>`drawable] obj -> gc -> pixmap ->
+    xsrc: int -> ysrc: int -> xdest: int -> ydest: int ->
     width: int -> height: int -> unit
     = "ml_gdk_draw_pixmap_bc" "ml_gdk_draw_pixmap"
   let pixmap w gc ?(xsrc=0) ?(ysrc=0) ?(xdest=0) ?(ydest=0)
@@ -614,7 +614,7 @@ module DnD = struct
 end
 
 module Truecolor = struct
-  (* Truecolor quick color query *) 
+  (* Truecolor quick color query *)
 
   type visual_shift_prec = {
       red_shift : int;
@@ -624,7 +624,7 @@ module Truecolor = struct
       blue_shift : int;
       blue_prec : int
     }
- 
+
   let shift_prec visual = {
     red_shift = Visual.red_shift visual;
     red_prec = Visual.red_prec visual;
@@ -649,7 +649,7 @@ module Truecolor = struct
 	and green_lsr = 16 - shift_prec.green_prec
 	and blue_lsr = 16 - shift_prec.blue_prec in
 	fun ~red: red ~green: green ~blue: blue ->
-	  (((red lsr red_lsr) lsl shift_prec.red_shift) lor 
+	  (((red lsr red_lsr) lsl shift_prec.red_shift) lor
     	   ((green lsr green_lsr) lsl shift_prec.green_shift) lor
     	   ((blue lsr blue_lsr) lsl shift_prec.blue_shift))
     | _ -> raise (Invalid_argument "Gdk.Truecolor.color_creator")
