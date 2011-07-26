@@ -116,14 +116,9 @@ module Message = struct
     Printf.kprintf (_log domain (log_level level)) fmt
 end
 
-(*
 module Thread = struct
-  external init : unit -> unit = "ml_g_thread_init"
-      (* Call only once! *)
-  external enter : unit -> unit = "ml_gdk_threads_enter"
-  external leave : unit -> unit = "ml_gdk_threads_leave"
+  external init : unit -> unit = "ml_g_thread_init" (* defined in ml_gdk.c *)
 end
-*)
 
 module Convert = struct
   type error =

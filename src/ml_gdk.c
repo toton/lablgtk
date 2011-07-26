@@ -71,6 +71,15 @@ CAMLprim value ml_gdk_init(value unit)
   return Val_GType(t);
 }
 
+CAMLprim value ml_g_thread_init(value unit)
+{
+  g_thread_init(NULL);
+  return Val_unit;
+}
+ML_0(gdk_threads_init, Unit);
+ML_0(gdk_threads_enter, Unit);
+ML_0(gdk_threads_leave, Unit);
+
 #include "gdk_tags.c"
 
 Make_OptFlags_val (GdkModifier_val)

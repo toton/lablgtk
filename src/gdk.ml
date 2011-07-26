@@ -788,3 +788,10 @@ module Windowing = struct
   external get : unit -> [`QUARTZ | `WIN32 | `X11] = "ml_gdk_get_platform"
   let platform = get ()
 end
+
+module Threads = struct
+  external init : unit -> unit = "ml_gdk_threads_init"
+  external enter : unit -> unit = "ml_gdk_threads_enter"
+  external leave : unit -> unit = "ml_gdk_threads_leave"
+  external g_thread_init : unit -> unit = "ml_g_thread_init" (* defined in ml_gdk.c *)
+end
